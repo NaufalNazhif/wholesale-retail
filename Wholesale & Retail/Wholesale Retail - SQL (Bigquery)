@@ -1,0 +1,121 @@
+-- Find Total Item Sold Each Category
+
+SELECT 
+    s.Product_Category, 
+    SUM(o.Quantity_Ordered) AS Total_Product
+FROM 
+    `nfn-bq-project.Project_1.Order` o
+JOIN 
+    `nfn-bq-project.Project_1.Supplier` s
+ON (o.Product_ID = s.Product_ID)
+GROUP BY s.Product_Category
+ORDER BY 2 DESC
+
+-------------------------------------------
+-- Find Which Category Have The Most Profit
+
+SELECT
+  s.Product_Category,
+  ROUND(SUM(o.Total_Retail_Price_for_This_Order - (o.Quantity_Ordered * o.Cost_Price_Per_Unit)),2) AS Total_Profit
+FROM
+  `nfn-bq-project.Project_1.Order` o
+JOIN
+  `nfn-bq-project.Project_1.Supplier` s
+ON
+  (o.Product_ID = s.Product_ID)
+GROUP BY s.Product_Category
+ORDER BY 2 DESC
+
+-------------------------------------------
+-- Average Profit per Item Each Category
+
+SELECT
+  s.Product_Category,
+  ROUND(AVG(o.Total_Retail_Price_for_This_Order - (o.Quantity_Ordered * o.Cost_Price_Per_Unit)),2) AS Average_Profit
+FROM
+  `nfn-bq-project.Project_1.Order` o
+JOIN
+  `nfn-bq-project.Project_1.Supplier` s
+ON
+  (o.Product_ID = s.Product_ID)
+GROUP BY s.Product_Category
+ORDER BY 2 DESC
+
+-------------------------------------------
+-- Product Line Total Sold Each Year
+
+WITH cte AS
+(
+  SELECT 
+    s.Product_Line, s.Product_Category, o.Date_Order_was_placed, o.Quantity_Ordered
+  FROM `nfn-bq-project.Project_1.Order` o
+  JOIN `nfn-bq-project.Project_1.Supplier` s
+  ON (o.Product_ID = s.Product_ID)
+)
+
+SELECT 
+  Product_Line,
+  Product_Category,
+  EXTRACT(YEAR FROM Date_Order_was_placed) AS Year,
+  SUM(Quantity_Ordered) AS Total_Sold
+FROM cte
+GROUP BY Product_Line, Product_Category, Year
+ORDER BY 1,2,3
+
+-------------------------------------------
+-- Find Top 5 & Bottom 5 Item Sold
+
+WITH wr AS
+(
+  SELECT 
+    s.Product_Category, 
+    s.Product_Name, 
+    ROUND((o.Total_Retail_Price_for_This_Order / o.Quantity_Ordered),3) AS Item_Retail
+  FROM `nfn-bq-project.Project_1.Order` o
+  JOIN `nfn-bq-project.Project_1.Supplier` s
+  ON (o.Product_ID = s.Product_ID)
+  GROUP BY s.Product_Category, s.Product_Name, Item_Retail
+),
+top1 AS
+(
+  SELECT *, ROW_NUMBER() OVER(PARTITION BY wr.Product_Category ORDER BY wr.Item_Retail DESC) AS rn
+  FROM wr
+),
+bot1 AS
+(
+  SELECT *, ROW_NUMBER() OVER(PARTITION BY wr.Product_Category ORDER BY wr.Item_Retail ASC) AS rn1
+  FROM wr
+)
+
+SELECT Product_Category, Product_Name, top1.Item_Retail
+FROM top1
+WHERE rn = 1
+ORDER BY 3 DESC
+LIMIT 5
+
+SELECT Product_Category, Product_Name, bot1.Item_Retail
+FROM bot1
+WHERE rn1 = 1
+ORDER BY 3 ASC
+LIMIT 5
+
+-------------------------------------------
+-- Find Total Customer Loyalty Each Status
+
+SELECT 
+  DISTINCT(INITCAP(Customer_Status)) AS Customer_Status, 
+  COUNT(INITCAP(Customer_Status)) AS Customer_Count
+FROM `nfn-bq-project.Project_1.Order`
+GROUP BY Customer_Status
+
+-------------------------------------------
+-- Find Supplier Country That Sell The Most Item
+
+SELECT 
+  s.Supplier_Country,
+  COUNT(s.Supplier_Country) AS Total_Order
+FROM `nfn-bq-project.Project_1.Order` o
+JOIN `nfn-bq-project.Project_1.Supplier` s
+ON(o.Product_ID = s.Product_ID)
+GROUP BY s.Supplier_Country
+ORDER BY 2 DESC

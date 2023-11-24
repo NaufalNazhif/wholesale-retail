@@ -108,5 +108,4 @@ SELECT
 FROM `nfn-bq-project.Project_1.Order`
 GROUP BY Customer_Status
 
--------------------------------------------
-ORDER BY 2 DESC
+------------------------------------------

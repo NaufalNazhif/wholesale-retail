@@ -109,13 +109,4 @@ FROM `nfn-bq-project.Project_1.Order`
 GROUP BY Customer_Status
 
 -------------------------------------------
--- Find Supplier Country That Sell The Most Item
-
-SELECT 
-  s.Supplier_Country,
-  COUNT(s.Supplier_Country) AS Total_Order
-FROM `nfn-bq-project.Project_1.Order` o
-JOIN `nfn-bq-project.Project_1.Supplier` s
-ON(o.Product_ID = s.Product_ID)
-GROUP BY s.Supplier_Country
 ORDER BY 2 DESC
